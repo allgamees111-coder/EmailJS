@@ -21,9 +21,9 @@ app.post("/upload", async (req, res) => {
   setTimeout(async () => {
     try {
       const response = await axios.post("https://api.emailjs.com/api/v1.0/email/send", {
-        service_id: service_6eeozkq,
-        template_id: template_wb3ibzr,
-        user_id: XiFPOwXsGBlSl8B7Q,
+        service_id: process.env.EMAILJS_SERVICE_ID,
+        template_id: process.env.EMAILJS_TEMPLATE_ID,
+        user_id: process.env.EMAILJS_PUBLIC_KEY,
         accessToken: process.env.EMAILJS_PRIVATE_KEY, // optional
         template_params: {
           to_email: "alliedcgaming@gmail.com",
@@ -41,4 +41,3 @@ app.post("/upload", async (req, res) => {
 
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => console.log(`🚀 Server running on port ${PORT}`));
-
