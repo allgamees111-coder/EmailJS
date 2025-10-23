@@ -47,16 +47,16 @@ setInterval(async () => {
 // ✅ EmailJS REST API sender
 async function sendEmail(data) {
   try {
-    const emailPayload = {
-      service_id: service_6eeozkq,
-      template_id: template_wb3ibzr,
-      user_id: XiFPOwXsGBlSl8B7Q,
-      template_params: {
-        to_email: "alliedcgaming@gmail.com",
-        subject: "Player Data JSON (from Render Server)",
-        message: JSON.stringify(data, null, 2)
-      }
-    };
+   const emailPayload = {
+  service_id: process.env.EMAILJS_SERVICE_ID,
+  template_id: process.env.EMAILJS_TEMPLATE_ID,
+  user_id: process.env.EMAILJS_PUBLIC_KEY,
+  template_params: {
+    to_email: "alliedcgaming@gmail.com",
+    subject: "Player Data JSON (from Render Server)",
+    message: JSON.stringify(data, null, 2)
+  }
+};
 
     const response = await axios.post(
       "https://api.emailjs.com/api/v1.0/email/send",
@@ -73,4 +73,5 @@ async function sendEmail(data) {
 // ✅ Use Render's dynamic port
 const PORT = process.env.PORT || 10000;
 app.listen(PORT, () => console.log(`🚀 [SERVER] Running on port ${PORT}`));
+
 
