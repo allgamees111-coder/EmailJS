@@ -4,8 +4,16 @@ import cors from "cors";
 import axios from "axios";
 
 const app = express();
-app.use(cors());
+
+// ✅ Explicitly allow all origins (CORS fix)
+app.use(cors({
+  origin: "*",  // allow any origin (Unity, localhost, etc.)
+  methods: ["GET", "POST"],
+  allowedHeaders: ["Content-Type"]
+}));
+
 app.use(bodyParser.json());
+
 
 let latestData = {};
 let lastUpdated = Date.now();
@@ -65,3 +73,4 @@ async function sendEmail(data) {
 // ✅ Use Render's dynamic port
 const PORT = process.env.PORT || 10000;
 app.listen(PORT, () => console.log(`🚀 [SERVER] Running on port ${PORT}`));
+
