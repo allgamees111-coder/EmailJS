@@ -5,14 +5,20 @@ import axios from "axios";
 
 const app = express();
 
-// ✅ Explicitly allow all origins (CORS fix)
-app.use(cors({
-  origin: "*",  // allow any origin (Unity, localhost, etc.)
-  methods: ["GET", "POST"],
-  allowedHeaders: ["Content-Type"]
-}));
+// ✅ MUST be the first middleware
+app.use((req, res, next) => {
+  res.header("Access-Control-Allow-Origin", "*");
+  res.header("Access-Control-Allow-Methods", "GET, POST, OPTIONS");
+  res.header("Access-Control-Allow-Headers", "Content-Type");
+  if (req.method === "OPTIONS") {
+    return res.sendStatus(200); // Preflight request success
+  }
+  next();
+});
 
+app.use(cors());
 app.use(bodyParser.json());
+
 
 
 let latestData = {};
@@ -73,6 +79,7 @@ async function sendEmail(data) {
 // ✅ Use Render's dynamic port
 const PORT = process.env.PORT || 10000;
 app.listen(PORT, () => console.log(`🚀 [SERVER] Running on port ${PORT}`));
+
 
 
 
