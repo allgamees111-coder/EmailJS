@@ -63,7 +63,7 @@ async function sendEmail(data) {
 
   const payload = {
     from: "Game Server <onboarding@resend.dev>",
-    to: ["alliedcgaming@gmail.com"], // ✅ your recipient
+   to: ["allgamees111@gmail.com"], // ✅ your recipient
     subject: "Player Data (5-minute summary)",
     text: JSON.stringify(data, null, 2)
   };
@@ -85,4 +85,5 @@ async function sendEmail(data) {
 // ✅ Render dynamic port
 const PORT = process.env.PORT || 10000;
 app.listen(PORT, () => console.log(`🚀 [SERVER] Running on port ${PORT}`));
+
 
