@@ -1,89 +1,69 @@
-// ✅ server.js — Secure version (Resend + 5-minute delayed email)
-
 import express from "express";
 import bodyParser from "body-parser";
 import cors from "cors";
-import axios from "axios";
+import { Resend } from "resend";
 
 const app = express();
+const resend = new Resend(process.env.RESEND_API_KEY);
 
-// 🛠️ Strong CORS fix for Render + Unity WebGL
-app.use((req, res, next) => {
-  res.header("Access-Control-Allow-Origin", "*"); // allow all origins
-  res.header("Access-Control-Allow-Methods", "GET, POST, OPTIONS");
-  res.header("Access-Control-Allow-Headers", "Content-Type, Authorization");
-
-  // ✅ Handle preflight requests instantly
-  if (req.method === "OPTIONS") {
-    return res.sendStatus(200);
-  }
-  next();
-});
-
-app.use(cors());
+app.use(cors({ origin: "*", methods: ["GET", "POST"], allowedHeaders: ["Content-Type"] }));
 app.use(bodyParser.json());
 
+// 🧠 Store data per player
+let playerDataMap = {}; 
+// Example: { "202510231216563779": { data: {...}, lastUpdated: 123456789 } }
 
-let latestData = {};
-let lastUpdated = Date.now();
-
-// 📨 POST endpoint for Unity WebGL
+// 📥 Receive player data from Unity
 app.post("/upload", (req, res) => {
-  latestData = req.body;
-  lastUpdated = Date.now();
-  console.log("✅ [UPLOAD] JSON received from Unity:");
-  console.log(JSON.stringify(latestData, null, 2));
-  res.status(200).send("✅ JSON received from Unity");
+  const player = req.body;
+  const playerID = player.PlayerID || `player_${Date.now()}`;
+
+  playerDataMap[playerID] = {
+    data: player,
+    lastUpdated: Date.now(),
+  };
+
+  console.log(`✅ [UPLOAD] Data received from Player ${playerID}`);
+  res.status(200).send("Data received");
 });
 
-// ⏳ Check every minute if 5 minutes have passed since last update
+// 🕒 Check all players every 1 minute
 setInterval(async () => {
-  if (Object.keys(latestData).length > 0) {
-    const diff = (Date.now() - lastUpdated) / 1000 / 60;
-    console.log(`⏳ [CHECK] ${diff.toFixed(2)} minutes since last update`);
+  const now = Date.now();
+
+  for (const [playerID, entry] of Object.entries(playerDataMap)) {
+    const diff = (now - entry.lastUpdated) / 1000 / 60; // in minutes
 
     if (diff >= 5) {
-      console.log("📬 [ACTION] 5 minutes passed — sending email...");
-      await sendEmail(latestData);
-      latestData = {}; // reset after sending
+      console.log(`📬 [SEND] Sending email for Player ${playerID} after ${diff.toFixed(2)} mins of inactivity`);
+      await sendEmail(entry.data, playerID);
+
+      delete playerDataMap[playerID]; // clear after sending
+    } else {
+      console.log(`⏳ [WAIT] Player ${playerID}: ${diff.toFixed(2)} mins since last update`);
     }
-  } else {
-    console.log("💤 [CHECK] No data to send yet...");
+  }
+
+  if (Object.keys(playerDataMap).length === 0) {
+    console.log("💤 [CHECK] No active players currently...");
   }
 }, 60000);
 
-// 🧠 Resend email function
-async function sendEmail(data) {
-  const RESEND_API_KEY = process.env.RESEND_API_KEY; // ✅ secure key from Render environment
-
-  if (!RESEND_API_KEY) {
-    console.error("❌ [ERROR] RESEND_API_KEY not set in environment variables!");
-    return;
-  }
-
-  const payload = {
-    from: "Game Server <onboarding@resend.dev>",
-   to: ["allgamees111@gmail.com"], // ✅ your recipient
-    subject: "Player Data (5-minute summary)",
-    text: JSON.stringify(data, null, 2)
-  };
-
+// 📧 Send email via Resend
+async function sendEmail(data, playerID) {
   try {
-    const response = await axios.post("https://api.resend.com/emails", payload, {
-      headers: {
-        Authorization: `Bearer ${RESEND_API_KEY}`,
-        "Content-Type": "application/json"
-      }
+    const emailResponse = await resend.emails.send({
+      from: "Game Server <allgamees111@gmail.com>", // ✅ must be verified domain or same as account
+      to: "alliedcgaming@gmail.com",
+      subject: `Player ${playerID} Data JSON`,
+      text: JSON.stringify(data, null, 2),
     });
 
-    console.log("✅ [EMAIL SENT]", response.data);
+    console.log(`✅ [EMAIL SENT] Player ${playerID} —`, emailResponse.id);
   } catch (error) {
-    console.error("❌ [EMAIL ERROR]", error.response?.data || error.message);
+    console.error(`❌ [EMAIL ERROR] Player ${playerID}:`, error.message);
   }
 }
 
-// ✅ Render dynamic port
 const PORT = process.env.PORT || 10000;
 app.listen(PORT, () => console.log(`🚀 [SERVER] Running on port ${PORT}`));
-
-
