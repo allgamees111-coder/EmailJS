@@ -24,7 +24,8 @@ let players = {}; // { playerName: { data, lastUpdated } }
 // ✅ Endpoint to receive data from Unity
 app.post("/upload", (req, res) => {
   const data = req.body;
-  const playerName = data?.player_name || `Player_${Date.now()}`;
+  const playerName = data?.Name || `Player_${Date.now()}`;
+
 
   players[playerName] = { data, lastUpdated: Date.now() };
 
@@ -71,5 +72,6 @@ async function sendEmail(playerName, data) {
 // ✅ Port for Render or local use
 const PORT = process.env.PORT || 10000;
 app.listen(PORT, () => console.log(`🚀 [SERVER] Running on port ${PORT}`));
+
 
 
