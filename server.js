@@ -4,72 +4,68 @@ import cors from "cors";
 import { Resend } from "resend";
 
 const app = express();
-const resend = new Resend(process.env.RESEND_API_KEY);
 
-app.use(cors({ origin: "*", methods: ["GET", "POST"], allowedHeaders: ["Content-Type"] }));
+// ✅ Allow Unity WebGL / local builds
+app.use(cors({
+  origin: "*",
+  methods: ["GET", "POST"],
+  allowedHeaders: ["Content-Type"]
+}));
 app.use(bodyParser.json());
 
-// 🧠 Store data per player
-let playerDataMap = {}; 
-// Example: { "202510231216563779": { data: {...}, lastUpdated: 123456789 } }
+// ✅ Initialize Resend (Option 1: use environment variable)
+const resend = new Resend(process.env.RESEND_API_KEY);
 
-// 📥 Receive player data from Unity
+// Store player data and timers
+let players = {}; // { playerName: { data, lastUpdated } }
+
+// ✅ Endpoint to receive data from Unity
 app.post("/upload", (req, res) => {
-  const player = req.body;
-  const playerID = player.PlayerID || `player_${Date.now()}`;
+  const data = req.body;
+  const playerName = data?.player_name || `Player_${Date.now()}`;
 
-  playerDataMap[playerID] = {
-    data: player,
-    lastUpdated: Date.now(),
-  };
+  players[playerName] = { data, lastUpdated: Date.now() };
 
-  console.log(`✅ [UPLOAD] Data received from Player ${playerID}`);
-  res.status(200).send("Data received");
+  console.log(`✅ [UPLOAD] Data received from ${playerName}`);
+  console.log(JSON.stringify(data, null, 2));
+  res.status(200).send(`Received JSON for ${playerName}`);
 });
 
-// 🕒 Check all players every 1 minute
+// ✅ Check every minute for each player
 setInterval(async () => {
   const now = Date.now();
+  for (const [playerName, info] of Object.entries(players)) {
+    const diffMinutes = (now - info.lastUpdated) / 1000 / 60;
 
-  for (const [playerID, entry] of Object.entries(playerDataMap)) {
-    const diff = (now - entry.lastUpdated) / 1000 / 60; // in minutes
-
-    if (diff >= 5) {
-      console.log(`📬 [SEND] Sending email for Player ${playerID} after ${diff.toFixed(2)} mins of inactivity`);
-      await sendEmail(entry.data, playerID);
-
-      delete playerDataMap[playerID]; // clear after sending
+    if (diffMinutes >= 5) {
+      console.log(`📬 [SEND] 5 minutes passed for ${playerName} — sending email...`);
+      await sendEmail(playerName, info.data);
+      delete players[playerName]; // reset player after sending
     } else {
-      console.log(`⏳ [WAIT] Player ${playerID}: ${diff.toFixed(2)} mins since last update`);
+      console.log(`⏳ [WAIT] ${playerName}: ${diffMinutes.toFixed(2)} min elapsed`);
     }
   }
 
-  if (Object.keys(playerDataMap).length === 0) {
-    console.log("💤 [CHECK] No active players currently...");
-  }
+  if (Object.keys(players).length === 0)
+    console.log("💤 [CHECK] No active players right now...");
 }, 60000);
 
-// 📧 Send email via Resend
-async function sendEmail(data) {
+// ✅ Send email via Resend
+async function sendEmail(playerName, data) {
   try {
-    const subject = `${data?.Name || "Unknown Player"} - Player Data JSON`;
-
     const response = await resend.emails.send({
       from: "Game Server <onboarding@resend.dev>",
-      to: "allgamees111@gmail.com",
-      subject: subject,
-      html: `<pre>${JSON.stringify(data, null, 2)}</pre>`
+      to: "alliedcgaming@gmail.com", // ✅ your destination email
+      subject: `${playerName} - Player Data JSON`,
+      text: JSON.stringify(data, null, 2),
     });
 
-    console.log(`✅ [EMAIL SENT] ${subject}`);
+    console.log(`✅ [EMAIL SENT] ${playerName} — ${response.id}`);
   } catch (error) {
-    console.error("❌ [EMAIL ERROR]", error.response?.data || error.message);
+    console.error("❌ [EMAIL ERROR]", error.message || error);
   }
 }
 
-
+// ✅ Port for Render or local use
 const PORT = process.env.PORT || 10000;
 app.listen(PORT, () => console.log(`🚀 [SERVER] Running on port ${PORT}`));
-
-
-
