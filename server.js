@@ -8,10 +8,12 @@ const app = express();
 // ✅ Allow Unity WebGL / local builds
 app.use(cors({
   origin: "*",
-  methods: ["GET", "POST"],
+  methods: ["GET","POST","OPTIONS"],
   allowedHeaders: ["Content-Type"]
 }));
+app.options("*", cors()); // handle preflight
 app.use(bodyParser.json());
+
 
 // ✅ Initialize Resend (Option 1: use environment variable)
 const resend = new Resend(process.env.RESEND_API_KEY);
@@ -69,3 +71,4 @@ async function sendEmail(playerName, data) {
 // ✅ Port for Render or local use
 const PORT = process.env.PORT || 10000;
 app.listen(PORT, () => console.log(`🚀 [SERVER] Running on port ${PORT}`));
+
