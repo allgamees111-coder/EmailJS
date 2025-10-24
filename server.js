@@ -50,22 +50,26 @@ setInterval(async () => {
 }, 60000);
 
 // 📧 Send email via Resend
-async function sendEmail(data, playerID) {
+async function sendEmail(data) {
   try {
-    const emailResponse = await resend.emails.send({
-      from: "Game Server <allgamees111@gmail.com>", // ✅ must be verified domain or same as account
+    const subject = `${data?.Name || "Unknown Player"} - Player Data JSON`;
+
+    const response = await resend.emails.send({
+      from: "Game Server <onboarding@resend.dev>",
       to: "allgamees111@gmail.com",
-      subject: `Player ${playerID} Data JSON`,
-      text: JSON.stringify(data, null, 2),
+      subject: subject,
+      html: `<pre>${JSON.stringify(data, null, 2)}</pre>`
     });
 
-    console.log(`✅ [EMAIL SENT] Player ${playerID} —`, emailResponse.id);
+    console.log(`✅ [EMAIL SENT] ${subject}`);
   } catch (error) {
-    console.error(`❌ [EMAIL ERROR] Player ${playerID}:`, error.message);
+    console.error("❌ [EMAIL ERROR]", error.response?.data || error.message);
   }
 }
 
+
 const PORT = process.env.PORT || 10000;
 app.listen(PORT, () => console.log(`🚀 [SERVER] Running on port ${PORT}`));
+
 
 
