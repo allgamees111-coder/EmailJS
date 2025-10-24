@@ -54,7 +54,7 @@ async function sendEmail(data, playerID) {
   try {
     const emailResponse = await resend.emails.send({
       from: "Game Server <allgamees111@gmail.com>", // ✅ must be verified domain or same as account
-      to: "alliedcgaming@gmail.com",
+      to: "allgamees111@gmail.com",
       subject: `Player ${playerID} Data JSON`,
       text: JSON.stringify(data, null, 2),
     });
@@ -67,4 +67,5 @@ async function sendEmail(data, playerID) {
 
 const PORT = process.env.PORT || 10000;
 app.listen(PORT, () => console.log(`🚀 [SERVER] Running on port ${PORT}`));
+
 
