@@ -58,7 +58,7 @@ async function sendEmail(playerName, data) {
   try {
     const response = await resend.emails.send({
       from: "Game Server <onboarding@resend.dev>",
-      to: "allgamees111@gmail.com", // ✅ your destination email
+      to: "devemancipationgame@outlook.com", // ✅ your destination email
       subject: `${playerName} - Player Data JSON`,
       text: JSON.stringify(data, null, 2),
     });
@@ -72,6 +72,7 @@ async function sendEmail(playerName, data) {
 // ✅ Port for Render or local use
 const PORT = process.env.PORT || 10000;
 app.listen(PORT, () => console.log(`🚀 [SERVER] Running on port ${PORT}`));
+
 
 
 
